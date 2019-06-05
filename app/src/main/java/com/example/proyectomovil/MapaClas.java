@@ -36,103 +36,159 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
+
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class mapa extends AppCompatActivity implements OnMapReadyCallback,LocationEngineListener,
-        PermissionsListener, MapboxMap.OnMapClickListener{
+public class MapaClas extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener,
+        PermissionsListener, MapboxMap.OnMapClickListener {
 
     private MapView mapView;
+    Double lon;
+    Double lac;
+
+    //Creo variable el mapa para los usuarios
     private MapboxMap map;
+
+    //Creo la variable para nuesto boto de inicio de ruta
     private Button startButton;
+
+    //Creo variable los permisos del admin
     private PermissionsManager permissionsManager;
+
+    //Creo variable para el motor de localizacion
     private LocationEngine locationEngine;
+
+    //Creo variable capa de localizacion plugin
     private LocationLayerPlugin locationLayerPlugin;
+
+    //Creo vriable para almacenar localizacion actual
     private Location originLocation;
+
+    //Creo variable para almacenar la posicion actual del punto
     private Point originPosition;
+
+    //Creo una variable donde almacenare la posicion de destino
     private Point destinationPosition;
+
+    //Creo la varaible para crear el marcador de destino
     private Marker destinationMarker;
+
+    //Creo una variable paa crear la ruta de navegacion
     private NavigationMapRoute navigationMapRoute;
-    private static final String TAG ="mapa";
+
+    //Creo una etiqueta para alguna actividad mas tarde
+    private static final String TAG ="MainActivity";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState){
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this,getString(R.string.access_token));
-        setContentView(R.layout.fragment_mapa);
+        setContentView(R.layout.activity_mapa_clas);
 
+        //Intaciamos mapView
         mapView =(MapView)findViewById(R.id.mapView);
+        //Iniciamos el botonStart
         startButton = (Button)findViewById(R.id.startButton);
+        //Creamos la instancia del mapView
         mapView.onCreate(savedInstanceState);
+        //Obtenemos el mapa de forma asincrona
         mapView.getMapAsync(this);
 
+
+        //Cuando le doy click al botonStart le digo que me corra la siguiente funcion
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Lanceme a la UI de navegacion
                 NavigationLauncherOptions options = NavigationLauncherOptions.builder()
                         .origin(originPosition)
                         .destination(destinationPosition)
                         .shouldSimulateRoute(false)
                         .build();
-                NavigationLauncher.startNavigation(mapa.this,options);
-
+                NavigationLauncher.startNavigation(MapaClas.this,options);
             }
         });
     }
 
     @Override
-    public void onMapReady(MapboxMap mapboxMap){
-        map = mapboxMap;
+    public void onMapReady(MapboxMap mapboxMap) {
+        lon = Double.parseDouble(getIntent().getStringExtra("longitud"));
+        lac=Double.parseDouble(getIntent().getStringExtra("lactitud"));
+        mapboxMap.addMarker(new MarkerOptions().position(new LatLng(lac,lon))
+                .title("UAO")
+                .snippet("Facultad ingenieria"));
 
-        map.addOnMapClickListener(this);
-        enableLocation();
+     // map.addOnMapClickListener(this);
+       // enableLocation();
     }
 
+    //Funcion para habilitar la localizacion
     private void enableLocation(){
-
+        //Decimos si el usuario ha dado permisos inicieme mi ubicacion
         if(PermissionsManager.areLocationPermissionsGranted(this)){
             initializeLocationEngine();
             initializeLocationLayer();
-
-        }else{
+            //Sino que pida los permisos de ubicacion
+        }else {
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
     }
-
+    //################
+    //Despues de dar todos los permisos cedo a mi ubicacion
+    @SuppressWarnings("MissingPermission")
     private void initializeLocationEngine(){
+        //Creamos la instancia de nuestro motor de localizacion
         locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
+        //Asignamos alta presicion para nuestra localizacion
         locationEngine.setPriority(LocationEnginePriority.HIGH_ACCURACY);
+        //Activamos nuestro motro de localizacion
         locationEngine.activate();
 
+        //Tomamos nuestra localizacion anterior
         Location lastLocation = locationEngine.getLastLocation();
-
+        //Decimos que si nuestra ubicacion es diferente a vacio entonce me asigne
+        //mi localizacion anterior a mi variable originLocation
         if(lastLocation != null){
             originLocation = lastLocation;
+            //Llamamos la funcion que anima la camara con la ubicacion del usuario
             setCameraPosition(lastLocation);
         }else {
+            //Si esta vacio entonces le decimos que me agregue la ubicacion del motor
             locationEngine.addLocationEngineListener(this);
         }
 
     }
-
+    @SuppressWarnings("MissingPermission")
     private void initializeLocationLayer(){
-        locationLayerPlugin = new LocationLayerPlugin(mapView, map,locationEngine);
+        //Mostramos una ubicacion al usuario
+        locationLayerPlugin = new LocationLayerPlugin(mapView,map,locationEngine);
+        //Asignamos la ubicacion habilitada a locationLayerPlugin
         locationLayerPlugin.setLocationLayerEnabled(true);
+        //Le decimos a la camara que haga tracking a la posicion
         locationLayerPlugin.setCameraMode(CameraMode.TRACKING);
-        locationLayerPlugin.setRenderMode(RenderMode.COMPASS);
+        //Luego le digo que renderice nuestro localLayerPlugin
+        locationLayerPlugin.setRenderMode(RenderMode.COMPASS); //puede ser RenderMode.NORMAL
     }
 
+    //Mover la camara con nuestra ubicacion
     private void setCameraPosition(Location location){
+        //llamamos la camara del mapa y la animamos
+        //pasandole los parametros latitud, longitud, zoom
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
                 location.getLongitude()),13.0));
+
     }
 
+    //Metodo a implementar despues de colocar el implement OnMapClickListenes
+
     @Override
-    public void onMapClick(@NonNull LatLng point){
+    public void onMapClick(@NonNull LatLng point) {
+
         //Aqui decimos que si existe un marcador elimine el otro marcador existente
         if(destinationMarker !=null){
             map.removeMarker(destinationMarker);
@@ -150,8 +206,11 @@ public class mapa extends AppCompatActivity implements OnMapReadyCallback,Locati
         startButton.setEnabled(true);
         //Le asigno un color azul oscuro
         startButton.setBackgroundResource(R.color.mapboxblue);
+
+
     }
 
+    //Funcion para conseguir la ruta de nuestro destino
     private void getRoute(Point origin, Point destination){
         //Decimos que construimos nuestra ruta a trasar
         NavigationRoute.builder()
@@ -193,6 +252,8 @@ public class mapa extends AppCompatActivity implements OnMapReadyCallback,Locati
                 });
     }
 
+
+    //################
 
     @Override
     @SuppressWarnings("MissingPermission")
@@ -293,5 +354,8 @@ public class mapa extends AppCompatActivity implements OnMapReadyCallback,Locati
         }
         mapView.onDestroy();
     }
+
+
+
 
 }

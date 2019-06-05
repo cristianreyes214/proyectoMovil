@@ -12,7 +12,7 @@ import java.util.StringTokenizer;
 
 public class MainActivity4 extends AppCompatActivity implements View.OnClickListener{
 
-    private  Button scanBtn, guardar, eliminar, ver;
+    private  Button scanBtn, mapa, eliminar, ver;
     private EditText nombreTxt, telefonoTxt, emailTxt, codigoTxt;
 
 
@@ -21,10 +21,24 @@ public class MainActivity4 extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main4);
         scanBtn = (Button)findViewById(R.id.buton1);
+        mapa = (Button)findViewById(R.id.butonMapa);
         nombreTxt = (EditText)findViewById(R.id.scan_nombre);
         codigoTxt = (EditText)findViewById(R.id.scan_codigo);
 
         scanBtn.setOnClickListener(this);
+
+        mapa.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent3 = new Intent(MainActivity4.this, MapaClas.class);
+                intent3.putExtra("lactitud", nombreTxt.getText().toString());
+                intent3.putExtra("longitud", codigoTxt.getText().toString());
+                startActivity(intent3);
+            }
+        });
+
+
+
 
     }
 
